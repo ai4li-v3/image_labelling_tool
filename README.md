@@ -1,2 +1,2 @@
-# image_labelling_tool
+# Image Labelling Tool
 The built-in tool for labelling Vietnam image easier
