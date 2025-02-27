@@ -36,10 +36,29 @@ class ImageLabelingApp(QWidget):
         self.back_button.clicked.connect(self.prev_image)
 
         # English Group Box
+        # English Group Box
         self.english_group_box = QGroupBox()
+        self.english_group_box.setContentsMargins(0, 0, 0, 0)  # Remove internal margins
+        self.english_group_box.setStyleSheet("""
+            QGroupBox {
+                border: none;  /* Remove the default border */
+                margin-top: 0; /* Remove top margin */
+                padding-top: 0; /* Remove top padding */
+                background: transparent; /* Make background transparent */
+            }
+        """)
+        
         english_layout = QVBoxLayout()
+        english_layout.setContentsMargins(10, 0, 10, 10)  # Adjust these values as needed
+        english_layout.setSpacing(0)  # Minimize spacing between elements
+        
         english_title = QLabel("English")
-        english_title.setStyleSheet("font-size: 34px; font-weight: bold; color: #333;") # Adjusted font size
+        english_title.setStyleSheet("""
+            font-size: 34px; 
+            font-weight: bold; 
+            color: #333;
+            background: transparent;
+        """)
 
         # Apply opacity effect to the entire group box
         opacity_effect = QGraphicsOpacityEffect()
@@ -49,7 +68,11 @@ class ImageLabelingApp(QWidget):
         english_layout.addWidget(english_title)
         self.english_content = QLabel()
         self.english_content.setTextFormat(Qt.RichText)
-        self.english_content.setStyleSheet("font-size: 24px; color: #000;")  # Adjusted style
+        self.english_content.setStyleSheet("""
+            font-size: 24px; 
+            color: #000;
+            background: transparent;
+        """)  # Adjusted style
         english_layout.addWidget(self.english_content)
         self.english_group_box.setLayout(english_layout)
 
@@ -88,18 +111,27 @@ class ImageLabelingApp(QWidget):
         """)
 
         # Layout
+        # Layout
         image_layout = QVBoxLayout()
+        image_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins around image
         image_layout.addWidget(self.image_label)
+        image_layout.addStretch()
 
         question_layout = QVBoxLayout()
-        question_layout.addWidget(self.english_group_box)
+        question_layout.setContentsMargins(0, 0, 0, 0)  # Remove all margins
+        question_layout.setSpacing(10)  # Adjust spacing between elements
+        question_layout.setAlignment(Qt.AlignTop | Qt.AlignRight)  # Align to top and right
+        question_layout.addWidget(self.english_group_box, 0, Qt.AlignTop | Qt.AlignRight)  # Explicitly align the group box
         question_layout.addWidget(self.answer_input)
         question_layout.addWidget(self.back_button)
         question_layout.addWidget(self.next_button)
+        question_layout.addStretch()
 
         main_layout = QHBoxLayout()
-        main_layout.addLayout(image_layout)
-        main_layout.addLayout(question_layout)
+        main_layout.setContentsMargins(10, 10, 10, 10)  # Add margins to main layout instead
+        main_layout.setSpacing(20)  # Adjust spacing between image and question section
+        main_layout.addLayout(image_layout, 1)
+        main_layout.addLayout(question_layout, 1)  # Give the question layout a stretch factor
         self.setLayout(main_layout)
 
         self.setWindowTitle("Image Labeling Tool")
