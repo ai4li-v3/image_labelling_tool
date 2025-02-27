@@ -5,10 +5,11 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMessageBox
 from PyQt5.QtCore import Qt
 
 from .components.image_viewer import ImageViewer
-from .components.answer_input import AnswerInput
 from .components.navigation import NavigationButtons
 from .components.english_display import EnglishDisplay
 from .components.title_display import TitleDisplay
+from .components.vietnamese_input import VietnameseInput
+from .components.confirmation_dialog import ConfirmationDialog
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -48,7 +49,7 @@ class MainWindow(QWidget):
         self.title_display = TitleDisplay()
         self.image_viewer = ImageViewer()
         self.english_display = EnglishDisplay()
-        self.answer_input = AnswerInput()
+        self.vietnamese_input = VietnameseInput()
         self.navigation = NavigationButtons()
 
         # Main vertical layout
@@ -69,19 +70,19 @@ class MainWindow(QWidget):
         image_layout.addWidget(self.image_viewer)
         image_layout.addStretch()
 
-        # Setup question layout
-        question_layout = QVBoxLayout()
-        question_layout.setContentsMargins(0, 0, 0, 0)
-        question_layout.setSpacing(10)
-        question_layout.setAlignment(Qt.AlignTop | Qt.AlignRight)
-        question_layout.addWidget(self.english_display)
-        question_layout.addWidget(self.answer_input)
-        question_layout.addWidget(self.navigation)
-        question_layout.addStretch()
+        # Setup right side layout
+        right_layout = QVBoxLayout()
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(20)
+        right_layout.setAlignment(Qt.AlignTop | Qt.AlignRight)
+        right_layout.addWidget(self.english_display)
+        right_layout.addWidget(self.vietnamese_input)
+        right_layout.addWidget(self.navigation)
+        right_layout.addStretch()
 
         # Add layouts to content layout
         content_layout.addLayout(image_layout, 1)
-        content_layout.addLayout(question_layout, 1)
+        content_layout.addLayout(right_layout, 1)
 
         # Add content layout to main layout
         main_layout.addLayout(content_layout)
@@ -108,10 +109,10 @@ class MainWindow(QWidget):
         if self.current_index < len(self.image_files):
             image_name = self.image_files[self.current_index]
             image_path = os.path.join(self.image_folder, image_name)
-            json_path_eng = os.path.join(
-                self.label_folder_eng,
-                image_name.rsplit('.', 1)[0] + '.json'
-            )
+            base_name = image_name.rsplit('.', 1)[0]
+            
+            json_path_eng = os.path.join(self.label_folder_eng, f"{base_name}.json")
+            json_path_vn = os.path.join(self.label_folder_vn, f"{base_name}.json")
 
             # Update title display
             self.title_display.set_image_name(image_path)
@@ -126,10 +127,19 @@ class MainWindow(QWidget):
                 question_text = 'No question available'
                 answer_text = 'No answer available'
 
+            # Load Vietnamese data if exists
+            if os.path.exists(json_path_vn):
+                with open(json_path_vn, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                vn_question = data.get('question_vn', '')
+                vn_answer = data.get('answer_vn', '')
+                self.vietnamese_input.set_inputs(vn_question, vn_answer)
+            else:
+                self.vietnamese_input.clear_inputs()
+
             # Update UI
             self.image_viewer.load_image(image_path)
             self.english_display.set_content(question_text, answer_text)
-            self.answer_input.clear_answer()
 
             # Update navigation buttons
             self.navigation.set_back_enabled(self.current_index > 0)
@@ -137,10 +147,15 @@ class MainWindow(QWidget):
 
     def save_current_answer(self):
         """Save the current answer to a JSON file"""
-        answer_text = self.answer_input.get_answer()
-        if not answer_text:
+        if not self.vietnamese_input.has_both_inputs():
+            QMessageBox.warning(
+                self, 
+                "Warning", 
+                "Please enter both Vietnamese question and answer before proceeding."
+            )
             return False
 
+        inputs = self.vietnamese_input.get_inputs()
         image_name = self.image_files[self.current_index]
         json_path_vn = os.path.join(
             self.label_folder_vn,
@@ -148,8 +163,8 @@ class MainWindow(QWidget):
         )
 
         data = {
-            'question_vn': 'Vietnamese question',  # You might want to modify this
-            'answer_vn': answer_text
+            'question_vn': inputs['question'],
+            'answer_vn': inputs['answer']
         }
 
         with open(json_path_vn, 'w', encoding='utf-8') as f:
@@ -159,16 +174,57 @@ class MainWindow(QWidget):
 
     def next_image(self):
         """Handle next image button click"""
-        if not self.save_current_answer():
-            QMessageBox.warning(self, "Warning", "Please enter a Vietnamese answer before proceeding.")
+        # First check if both inputs are provided
+        if not self.vietnamese_input.has_both_inputs():
+            QMessageBox.warning(
+                self, 
+                "Warning", 
+                "Please enter both Vietnamese question and answer before proceeding."
+            )
             return
 
-        if self.current_index < len(self.image_files) - 1:
-            self.current_index += 1
-            self.load_current_image()
-        else:
-            QMessageBox.information(self, "Completed", "All images have been labeled!")
-            self.close()
+        # Get current English and Vietnamese content
+        eng_data = self.get_current_english_data()
+        vn_data = self.vietnamese_input.get_inputs()
+
+        # Show confirmation dialog
+        dialog = ConfirmationDialog(
+            eng_data['question'],
+            eng_data['answer'],
+            vn_data['question'],
+            vn_data['answer'],
+            self
+        )
+
+        if dialog.exec_() == ConfirmationDialog.Accepted:
+            # Save and proceed if confirmed
+            if self.save_current_answer():
+                if self.current_index < len(self.image_files) - 1:
+                    self.current_index += 1
+                    self.load_current_image()
+                else:
+                    QMessageBox.information(self, "Completed", "All images have been labeled!")
+                    self.close()
+
+    def get_current_english_data(self):
+        """Get the current English question and answer"""
+        image_name = self.image_files[self.current_index]
+        json_path_eng = os.path.join(
+            self.label_folder_eng,
+            image_name.rsplit('.', 1)[0] + '.json'
+        )
+
+        if os.path.exists(json_path_eng):
+            with open(json_path_eng, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return {
+                'question': data.get('question_eng', 'No question available'),
+                'answer': data.get('answer_eng', 'No answer available')
+            }
+        return {
+            'question': 'No question available',
+            'answer': 'No answer available'
+        }
 
     def prev_image(self):
         """Handle previous image button click"""
