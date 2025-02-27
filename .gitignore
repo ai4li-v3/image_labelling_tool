@@ -1,2 +1,8 @@
+# Ignore project file from IDE
 .idea
+
+# Ignore Macbook files
 .DS_Store
+
+# Ignore all pycache files
+**/__pycache__/
