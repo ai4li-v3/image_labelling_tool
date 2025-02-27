@@ -1,8 +1,11 @@
 import os
 import sys
 import json
+import logging
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QMessageBox
 from PyQt5.QtCore import Qt
+
+logger = logging.getLogger(__name__)
 
 from .components.image_viewer import ImageViewer
 from .components.navigation import NavigationButtons
@@ -131,6 +134,10 @@ class MainWindow(QWidget):
                 question_text = 'No question available'
                 answer_text = 'No answer available'
 
+            # Update English display and pass to Vietnamese input for translation
+            self.english_display.set_content(question_text, answer_text)
+            self.vietnamese_input.set_english_content(question_text, answer_text)
+
             # Load Vietnamese data if exists
             if is_labeled:
                 with open(json_path_vn, 'r', encoding='utf-8') as f:
@@ -143,7 +150,6 @@ class MainWindow(QWidget):
 
             # Update UI
             self.image_viewer.load_image(image_path)
-            self.english_display.set_content(question_text, answer_text)
 
             # Update navigation buttons
             self.navigation.set_back_enabled(self.current_index > 0)
@@ -190,37 +196,39 @@ class MainWindow(QWidget):
             )
             return
 
-        # Check if current image is already labeled
-        image_name = self.image_files[self.current_index]
-        json_path_vn = os.path.join(
-            self.label_folder_vn,
-            image_name.rsplit('.', 1)[0] + '.json'
-        )
-        is_labeled = os.path.exists(json_path_vn)
-
         # Get current English and Vietnamese content
         eng_data = self.get_current_english_data()
         vn_data = self.vietnamese_input.get_inputs()
 
-        # Show confirmation dialog
-        dialog = ConfirmationDialog(
-            eng_data['question'],
-            eng_data['answer'],
-            vn_data['question'],
-            vn_data['answer'],
-            is_labeled,
-            self
-        )
+        # Only show confirmation if needed
+        should_confirm = self.vietnamese_input.should_show_confirmation()
+        logger.debug(f"Should show confirmation: {should_confirm}")
+        
+        if should_confirm:
+            # Show confirmation dialog
+            dialog = ConfirmationDialog(
+                eng_data['question'],
+                eng_data['answer'],
+                vn_data['question'],
+                vn_data['answer'],
+                os.path.exists(os.path.join(
+                    self.label_folder_vn,
+                    self.image_files[self.current_index].rsplit('.', 1)[0] + '.json'
+                )),
+                self
+            )
 
-        if dialog.exec_() == ConfirmationDialog.Accepted:
-            # Save and proceed if confirmed
-            if self.save_current_answer():
-                if self.current_index < len(self.image_files) - 1:
-                    self.current_index += 1
-                    self.load_current_image()
-                else:
-                    QMessageBox.information(self, "Completed", "All images have been labeled!")
-                    self.close()
+            if dialog.exec_() != ConfirmationDialog.Accepted:
+                return
+
+        # Save and proceed
+        if self.save_current_answer():
+            if self.current_index < len(self.image_files) - 1:
+                self.current_index += 1
+                self.load_current_image()
+            else:
+                QMessageBox.information(self, "Completed", "All images have been labeled!")
+                self.close()
 
     def get_current_english_data(self):
         """Get the current English question and answer"""

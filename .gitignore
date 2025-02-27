@@ -6,3 +6,7 @@
 
 # Ignore all pycache files
 **/__pycache__/
+
+# Ignore downloaded model files but keep directory structure
+models/*
+!models/.gitkeep
