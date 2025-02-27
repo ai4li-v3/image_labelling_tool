@@ -8,6 +8,7 @@ from .components.image_viewer import ImageViewer
 from .components.answer_input import AnswerInput
 from .components.navigation import NavigationButtons
 from .components.english_display import EnglishDisplay
+from .components.title_display import TitleDisplay
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -44,17 +45,31 @@ class MainWindow(QWidget):
     def init_ui(self):
         """Initialize the main UI components"""
         # Create components
+        self.title_display = TitleDisplay()
         self.image_viewer = ImageViewer()
         self.english_display = EnglishDisplay()
         self.answer_input = AnswerInput()
         self.navigation = NavigationButtons()
 
-        # Setup layouts
+        # Main vertical layout
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
+
+        # Add title at the top
+        main_layout.addWidget(self.title_display)
+
+        # Create horizontal layout for image and controls
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(20)
+
+        # Setup image layout
         image_layout = QVBoxLayout()
         image_layout.setContentsMargins(0, 0, 0, 0)
         image_layout.addWidget(self.image_viewer)
         image_layout.addStretch()
 
+        # Setup question layout
         question_layout = QVBoxLayout()
         question_layout.setContentsMargins(0, 0, 0, 0)
         question_layout.setSpacing(10)
@@ -64,12 +79,12 @@ class MainWindow(QWidget):
         question_layout.addWidget(self.navigation)
         question_layout.addStretch()
 
-        # Main layout
-        main_layout = QHBoxLayout()
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(20)
-        main_layout.addLayout(image_layout, 1)
-        main_layout.addLayout(question_layout, 1)
+        # Add layouts to content layout
+        content_layout.addLayout(image_layout, 1)
+        content_layout.addLayout(question_layout, 1)
+
+        # Add content layout to main layout
+        main_layout.addLayout(content_layout)
         
         self.setLayout(main_layout)
         self.setWindowTitle("Image Labeling Tool")
@@ -97,6 +112,9 @@ class MainWindow(QWidget):
                 self.label_folder_eng,
                 image_name.rsplit('.', 1)[0] + '.json'
             )
+
+            # Update title display
+            self.title_display.set_image_name(image_path)
 
             # Load English data
             if os.path.exists(json_path_eng):
