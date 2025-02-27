@@ -114,8 +114,12 @@ class MainWindow(QWidget):
             json_path_eng = os.path.join(self.label_folder_eng, f"{base_name}.json")
             json_path_vn = os.path.join(self.label_folder_vn, f"{base_name}.json")
 
-            # Update title display
-            self.title_display.set_image_name(image_path)
+            # Check if image is already labeled
+            is_labeled = os.path.exists(json_path_vn)
+            status_text = "LABELED" if is_labeled else "UNLABELED"
+            
+            # Update title display with status
+            self.title_display.set_image_name(image_path, status_text)
 
             # Load English data
             if os.path.exists(json_path_eng):
@@ -128,7 +132,7 @@ class MainWindow(QWidget):
                 answer_text = 'No answer available'
 
             # Load Vietnamese data if exists
-            if os.path.exists(json_path_vn):
+            if is_labeled:
                 with open(json_path_vn, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 vn_question = data.get('question_vn', '')
@@ -144,6 +148,9 @@ class MainWindow(QWidget):
             # Update navigation buttons
             self.navigation.set_back_enabled(self.current_index > 0)
             self.navigation.set_next_enabled(True)
+
+            # Update window title with status
+            self.setWindowTitle(f"Image Labeling Tool - {status_text}")
 
     def save_current_answer(self):
         """Save the current answer to a JSON file"""
@@ -183,6 +190,14 @@ class MainWindow(QWidget):
             )
             return
 
+        # Check if current image is already labeled
+        image_name = self.image_files[self.current_index]
+        json_path_vn = os.path.join(
+            self.label_folder_vn,
+            image_name.rsplit('.', 1)[0] + '.json'
+        )
+        is_labeled = os.path.exists(json_path_vn)
+
         # Get current English and Vietnamese content
         eng_data = self.get_current_english_data()
         vn_data = self.vietnamese_input.get_inputs()
@@ -193,6 +208,7 @@ class MainWindow(QWidget):
             eng_data['answer'],
             vn_data['question'],
             vn_data['answer'],
+            is_labeled,
             self
         )
 

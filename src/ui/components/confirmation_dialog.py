@@ -3,11 +3,11 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt5.QtCore import Qt
 
 class ConfirmationDialog(QDialog):
-    def __init__(self, eng_question, eng_answer, vn_question, vn_answer, parent=None):
+    def __init__(self, eng_question, eng_answer, vn_question, vn_answer, is_labeled=False, parent=None):
         super().__init__(parent)
-        self.init_ui(eng_question, eng_answer, vn_question, vn_answer)
+        self.init_ui(eng_question, eng_answer, vn_question, vn_answer, is_labeled)
 
-    def init_ui(self, eng_question, eng_answer, vn_question, vn_answer):
+    def init_ui(self, eng_question, eng_answer, vn_question, vn_answer, is_labeled):
         """Initialize the confirmation dialog UI"""
         self.setWindowTitle("Confirm Translation")
         self.setModal(True)
@@ -67,17 +67,29 @@ class ConfirmationDialog(QDialog):
         layout.setSpacing(10)
         layout.setContentsMargins(15, 15, 15, 15)
 
-        # Title
-        title = QLabel("Please Confirm Your Translation")
+        # Title with edit status
+        title_text = "Edit Existing Translation" if is_labeled else "Please Confirm Your Translation"
+        title = QLabel(title_text)
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("""
+        title.setStyleSheet(f"""
             font-size: 22px;
             font-weight: bold;
-            color: #2c3e50;
+            color: {('#e67e22' if is_labeled else '#2c3e50')};
             padding: 5px;
             margin-bottom: 10px;
         """)
         layout.addWidget(title)
+
+        # Status label for edits
+        if is_labeled:
+            status_label = QLabel("You are modifying an existing translation")
+            status_label.setAlignment(Qt.AlignCenter)
+            status_label.setStyleSheet("""
+                font-size: 14px;
+                color: #7f8c8d;
+                margin-bottom: 10px;
+            """)
+            layout.addWidget(status_label)
 
         # Question Section
         question_section = self._create_section(

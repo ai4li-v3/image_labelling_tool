@@ -19,13 +19,20 @@ class TitleDisplay(QLabel):
                 border-radius: 5px;
                 margin: 5px;
             }
+            .labeled {
+                color: #27ae60;
+            }
+            .unlabeled {
+                color: #c0392b;
+            }
         """)
 
-    def set_image_name(self, image_path):
-        """Display the current image name without extension"""
+    def set_image_name(self, image_path, status):
+        """Display the current image name and status"""
         if image_path:
             # Extract filename without extension
             image_name = image_path.split('/')[-1].rsplit('.', 1)[0]
-            self.setText(f"Image: {image_name}")
+            status_color = "#27ae60" if status == "LABELED" else "#c0392b"
+            self.setText(f"Current Image: {image_name} <span style='color: {status_color}'>{status}</span>")
         else:
             self.setText("No image selected") 
