@@ -26,13 +26,21 @@ class TitleDisplay(QLabel):
                 color: #c0392b;
             }
         """)
+        self.setTextFormat(Qt.RichText)  # Enable rich text interpretation by default
 
     def set_image_name(self, image_path, status):
         """Display the current image name and status"""
         if image_path:
             # Extract filename without extension
             image_name = image_path.split('/')[-1].rsplit('.', 1)[0]
-            status_color = "#27ae60" if status == "LABELED" else "#c0392b"
-            self.setText(f"Current Image: {image_name} <span style='color: {status_color}'>{status}</span>")
+            
+            # Check if status already contains HTML formatting
+            if '<span' in status:
+                # Status already has HTML formatting, use it directly
+                self.setText(f"Current Image: {image_name} {status}")
+            else:
+                # Apply color based on status text for backward compatibility
+                status_color = "#27ae60" if status == "LABELED" else "#c0392b"
+                self.setText(f"Current Image: {image_name} <span style='color: {status_color}'>{status}</span>")
         else:
             self.setText("No image selected") 

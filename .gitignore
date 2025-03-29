@@ -9,3 +9,9 @@
 
 # Ignore model directory
 models/
+
+# Temporary ignore sample data labels
+data/labels/
+
+# Ignore log file
+logs/ 
