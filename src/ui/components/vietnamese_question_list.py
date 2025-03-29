@@ -2369,9 +2369,24 @@ class VietnameseQuestionList(QWidget):
         # Update the question model
         if self.questions and len(self.questions) > 0:
             self.questions[0]['tags'] = self.selected_tags.copy()
-            self.modified = True
-            self.content_changed.emit()
             
+            # Check if this is a change from original state
+            has_original_data = hasattr(self, '_original_state') and self._original_state is not None
+            if has_original_data:
+                orig_tags = set(self._original_state.get('tags', []))
+                current_tags = set(self.selected_tags)
+                is_different = current_tags != orig_tags
+                
+                if is_different:
+                    self.modified = True
+                    logger.info(f"Tag added: {tag}, setting modified flag to True")
+                    
+                    # Update UI state to reflect changes
+                    self._update_ui_state()
+                    
+                    # Emit content changed signal
+                    self.content_changed.emit()
+
     def _remove_tag(self, tag):
         """Remove a tag from the selected tags"""
         if tag in self.selected_tags:
@@ -2388,8 +2403,23 @@ class VietnameseQuestionList(QWidget):
             # Update the question model
             if self.questions and len(self.questions) > 0:
                 self.questions[0]['tags'] = self.selected_tags.copy()
-                self.modified = True
-                self.content_changed.emit()
+                
+                # Check if this is a change from original state
+                has_original_data = hasattr(self, '_original_state') and self._original_state is not None
+                if has_original_data:
+                    orig_tags = set(self._original_state.get('tags', []))
+                    current_tags = set(self.selected_tags)
+                    is_different = current_tags != orig_tags
+                    
+                    if is_different:
+                        self.modified = True
+                        logger.info(f"Tag removed: {tag}, setting modified flag to True")
+                        
+                        # Update UI state to reflect changes
+                        self._update_ui_state()
+                        
+                        # Emit content changed signal
+                        self.content_changed.emit()
 
     def _clear_tags(self):
         """Clear all selected tags"""
@@ -2613,43 +2643,13 @@ class VietnameseQuestionList(QWidget):
             
             # Update modified flag based on changes
             self.modified = is_different
+            logger.info(f"Setting modified flag to {is_different} based on changes")
             
-        # Make sure question in model always matches UI state (which might have been updated above)
-        question['question'] = question_text
-        question['question_type'] = self.question_type_combo.currentData()
-        question['answerable'] = 1 if is_answerable else 0
-        
-        # Đảm bảo có mảng answers để tương thích với mã hiện có
-        if 'answers' not in question:
-            question['answers'] = []
+            # Update UI state to reflect changes
+            self._update_ui_state()
             
-        # Cập nhật thông tin câu trả lời
-        answer_text = self.answer_text.text().strip()  # Use text() instead of toPlainText()
-        
-        # Đảm bảo có ít nhất một câu trả lời
-        if not question['answers']:
-            question['answers'].append({
-                'answer_id': 1,
-                'answer_text': answer_text if is_answerable else "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh",
-                'is_correct': False  # Default to False since we removed the checkbox
-            })
-        else:
-            # If 'answers' is an array of strings, convert it to the expected format
-            if isinstance(question['answers'][0], str):
-                question['answers'] = [{
-                    'answer_id': 1,
-                    'answer_text': question['answers'][0],
-                    'is_correct': False
-                }]
-            
-            # Now we can safely update the answer text
-            question['answers'][0]['answer_text'] = answer_text if is_answerable else "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh"
-        
-        # Always call _update_ui_state() after content changes to ensure buttons are enabled properly
-        self._update_ui_state()
-        
-        # Emit signal - this will update the UI elsewhere
-        self.content_changed.emit()
+            # Emit content changed signal to notify parent components
+            self.content_changed.emit()
 
     def _on_question_type_changed(self, index):
         """Handle changes to the question type"""

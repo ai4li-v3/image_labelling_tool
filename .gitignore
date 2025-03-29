@@ -14,4 +14,4 @@ models/
 data/labels/
 
 # Ignore log file
-logs/ 
+logs/
