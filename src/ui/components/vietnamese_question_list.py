@@ -22,7 +22,8 @@ QUESTION_TYPES = [
 PREDEFINED_TAGS = [
     "WATER_BOTTLE",
     "CUP",
-    "WALLET"
+    "WALLET",
+    "REMOTE"
 ]
 
 class TagButton(QPushButton):
