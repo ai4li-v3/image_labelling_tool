@@ -817,10 +817,54 @@ class VietnameseQuestionList(QWidget):
         self._on_content_changed()
     
     def _update_ui_state(self):
-        """Update UI state based on selection"""
+        """Update UI state based on current form values"""
         try:
-            # Question details section - luôn bật vì chỉ có 1 câu hỏi cố định
-            enabled = True
+            logger.info("_update_ui_state called - Updating UI state")
+
+            # Basic field values - these are the ONLY required fields for unlabeled images
+            has_text = bool(self.question_text.text().strip())
+            has_tags = bool(self.selected_tags)
+            is_answerable = self.can_answer_check.isChecked()
+            has_answer = bool(self.answer_text.text().strip())
+            
+            # Log field states for debugging
+            logger.info(f"Fields: has_text={has_text}, has_tags={has_tags}, is_answerable={is_answerable}, has_answer={has_answer}")
+
+            # Detect whether this is a new question (no original state)
+            has_original_data = hasattr(self, '_original_state') and self._original_state is not None
+            
+            # SIMPLIFIED LOGIC for NEW questions
+            if not has_original_data:
+                # For new questions - require text, tags, and answer if answerable is checked
+                logger.info("No original state - new unlabeled image")
+                
+                # Basic validation, similar to existing questions:
+                # - Question text and tags are required
+                # - If answerable is checked, answer is required
+                can_confirm = has_text and has_tags and (not is_answerable or (is_answerable and has_answer))
+                
+                logger.info(f"New image validation: text={has_text}, tags={has_tags}, answerable={is_answerable}, answer={has_answer}, can_confirm={can_confirm}")
+                
+                # Update model with current question text 
+                if self.questions and len(self.questions) > 0:
+                    self.questions[0]['question'] = self.question_text.text().strip()
+                
+                # DIRECTLY enable/disable confirm button based on required fields
+                if hasattr(self, 'confirm_question_btn') and self.confirm_question_btn:
+                    self.confirm_question_btn.setEnabled(can_confirm)
+                    logger.info(f"DIRECT confirm button update: enabled={can_confirm}")
+                
+                # Enable cancel button if anything has been filled
+                has_any_content = has_text or has_tags or (is_answerable and has_answer)
+                if hasattr(self, 'cancel_question_btn') and self.cancel_question_btn:
+                    self.cancel_question_btn.setEnabled(has_any_content)
+                
+                # Enable/disable answer field based on can_answer checkbox
+                if hasattr(self, 'answer_text'):
+                    self.answer_text.setReadOnly(not is_answerable)
+                    self.answer_text.setEnabled(True)
+                
+                return  # Skip the rest of the method
             
             # Log current state
             logger.info("_update_ui_state called - Updating UI state")
@@ -2371,8 +2415,20 @@ class VietnameseQuestionList(QWidget):
         if self.questions and len(self.questions) > 0:
             self.questions[0]['tags'] = self.selected_tags.copy()
             
-            # Check if this is a change from original state
+            # ALWAYS update UI for new questions (no original state)
             has_original_data = hasattr(self, '_original_state') and self._original_state is not None
+            
+            # Force modified to true for new questions with tags
+            if not has_original_data:
+                self.modified = True
+                logger.info(f"Tag added to new question: {tag}, forcing UI update")
+                # Always update the UI state for new questions when tags are added
+                self._update_ui_state()
+                # Emit content changed signal
+                self.content_changed.emit()
+                return
+                
+            # For existing questions, check if this is a change
             if has_original_data:
                 orig_tags = set(self._original_state.get('tags', []))
                 current_tags = set(self.selected_tags)
@@ -2487,171 +2543,36 @@ class VietnameseQuestionList(QWidget):
         # Debug log to track method calls
         logger.info(f"_on_content_changed called with text: '{question_text}'")
         
+        # IMPORTANT: Always update the question model with current text
+        question['question'] = question_text
+        
+        # Check if this is a new question (no original state)
+        has_original_data = hasattr(self, '_original_state') and self._original_state is not None
+        
+        # For new unlabeled images, always update UI if text is entered
+        if not has_original_data:
+            # Get basic validation status
+            has_text = bool(question_text)
+            has_tags = bool(self.selected_tags)
+            
+            # If we have both text and tags for a new question, force UI update
+            if has_text and has_tags:
+                logger.info(f"Text and tags present for new question, forcing UI update")
+                # Force update UI state for new questions
+                self._update_ui_state()
+                return
+        
         # Store original content if this is first edit and no original_text exists
         if question.get('is_confirmed', False) and 'original_text' not in question:
             question['original_text'] = question.get('question', '')
         
+        # Continue with the rest of the method as before...
         # Get current values for validation and comparison
         has_text = bool(question_text)
         has_tags = bool(self.selected_tags)
         is_answerable = self.can_answer_check.isChecked()
         question_answerable = question.get('answerable', 0) == 1
-        
-        # Log states for debugging
-        logger.info(f"_on_content_changed - UI checkbox answerable state: {is_answerable}, model question answerable: {question_answerable}")
-        
-        # Fix mismatch between model and UI checkbox - THIS IS CRITICAL
-        if is_answerable != question_answerable:
-            has_original_data = hasattr(self, '_original_state') and self._original_state is not None
-            
-            # For new unlabeled images (no original state), the UI state should take precedence
-            if not has_original_data and is_answerable:
-                # This is likely a user explicitly checking the checkbox on a new unlabeled image
-                logger.info("New unlabeled image: UI checkbox checked, updating model to match")
-                question['answerable'] = 1
-                question_answerable = True
-            elif not has_original_data and not is_answerable:
-                # Ensure model is consistent with UI for new unlabeled images
-                logger.info("New unlabeled image: UI checkbox unchecked, ensuring model matches")
-                question['answerable'] = 0
-                question_answerable = False
-            # For loaded questions with original state, model should take precedence
-            elif has_original_data and question_answerable:
-                # Model says answerable=1 but UI checkbox is unchecked
-                # Update UI to match the model (this is the case when loading a question)
-                logger.info(f"_on_content_changed - Fixing UI checkbox: Model has answerable=1 but UI checkbox is unchecked")
-                
-                # Block signals to prevent recursion
-                old_block_state = self.can_answer_check.blockSignals(True)
-                self.can_answer_check.setChecked(True)
-                self.can_answer_check.blockSignals(old_block_state)
-                
-                # Update UI state for answerable question
-                current_answer_text = self.answer_text.text().strip()
-                if not current_answer_text or current_answer_text == "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh":
-                    # Try to get the answer from the model
-                    answer_text = ""
-                    if 'answers' in question and question['answers']:
-                        if isinstance(question['answers'][0], str):
-                            answer_text = question['answers'][0]
-                        else:
-                            answer_text = question['answers'][0].get('answer_text', '')
-                    
-                    if not answer_text or answer_text == "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh":
-                        # If we don't have a valid answer, clear the field
-                        self.answer_text.clear()
-                    else:
-                        # Use the answer from the model
-                        self.answer_text.setText(answer_text)
-                
-                # Update UI style for answerable question
-                self.answer_text.setReadOnly(False)
-                self.answer_text.setStyleSheet("""
-                    background-color: white;
-                    border: 1px solid #bdc3c7;
-                    border-radius: 5px;
-                    padding: 8px;
-                    font-size: 13px;
-                """)
-                self.answer_text.setPlaceholderText("Nhập câu trả lời tại đây...")
-                
-                # Ensure model is consistent
-                is_answerable = True
-            elif has_original_data and not question_answerable:
-                # Model says answerable=0 but UI checkbox is checked
-                # For labeled images, prioritize the UI state (user toggled the checkbox)
-                logger.info(f"_on_content_changed - Fixing model: Model has answerable=0 but UI checkbox is checked")
-                question['answerable'] = 1
-                question_answerable = True
-        
-        has_answer = bool(self.answer_text.text().strip())
-        
-        # Basic validation for form completion
-        basic_validation = has_text and has_tags and (not is_answerable or (is_answerable and has_answer))
-        
-        # Check for actual changes compared to original state
-        has_changes = True
-        has_original_data = hasattr(self, '_original_state') and self._original_state is not None
-        
-        if has_original_data:
-            # Get current values for comparison with original
-            current_question = question_text
-            current_question_type = str(self.question_type_combo.currentData()).lower()
-            current_answer = self.answer_text.text().strip()
-            if not is_answerable:
-                current_answer = "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh"
-            current_tags = set(self.selected_tags)
-            current_source = self.source_combo.currentData()
-            current_image_source = self.image_source
-            
-            # Get original values
-            orig_question = self._original_state.get('question', '').strip()
-            orig_question_type = str(self._original_state.get('question_type', '')).lower()
-            orig_answerable = self._original_state.get('answerable', 0) == 1
-            
-            # Log original answerable state for debugging
-            logger.info(f"_on_content_changed - Original answerable state: {orig_answerable} (value: {self._original_state.get('answerable', 0)})")
-            
-            # Get original answer
-            orig_answer = ""
-            if 'answers' in self._original_state and self._original_state['answers']:
-                if isinstance(self._original_state['answers'][0], str):
-                    orig_answer = self._original_state['answers'][0].strip()
-                else:
-                    orig_answer = self._original_state['answers'][0].get('answer_text', '').strip()
-            
-            # Get original tags
-            orig_tags = set(self._original_state.get('tags', []))
-            
-            # Get original source
-            orig_source = self._original_state.get('qa_source', self._original_state.get('source', ''))
-            
-            # Get original image source
-            orig_image_source = getattr(self, '_original_image_source', None)
-            
-            # Check if any values have changed using a single comparison for clarity
-            is_different = (
-                question_text != orig_question or
-                current_question_type != orig_question_type or
-                is_answerable != orig_answerable or
-                current_answer != orig_answer or
-                current_tags != orig_tags or
-                current_source != orig_source or
-                (orig_image_source is not None and current_image_source != orig_image_source)
-            )
-            
-            # Log detailed comparison results for debugging
-            logger.info(f"_on_content_changed - Differences detected: {is_different}")
-            if is_different:
-                logger.info(f"Differences detected in _on_content_changed:")
-                if question_text != orig_question:
-                    logger.info(f"  - Question text differs: '{question_text}' vs '{orig_question}'")
-                if current_question_type != orig_question_type:
-                    logger.info(f"  - Question type differs: '{current_question_type}' vs '{orig_question_type}'")
-                if is_answerable != orig_answerable:
-                    logger.info(f"  - Answerable state differs: {is_answerable} vs {orig_answerable}")
-                if current_answer != orig_answer:
-                    logger.info(f"  - Answer differs: '{current_answer}' vs '{orig_answer}'")
-                if current_tags != orig_tags:
-                    logger.info(f"  - Tags differ: {current_tags} vs {orig_tags}")
-                if current_source != orig_source:
-                    logger.info(f"  - Source differs: '{current_source}' vs '{orig_source}'")
-                if orig_image_source is not None and current_image_source != orig_image_source:
-                    logger.info(f"  - Image source differs: '{current_image_source}' vs '{orig_image_source}'")
-            
-            # Only allow confirmation if there are actual changes
-            has_changes = is_different
-            
-            # Update modified flag based on changes
-            self.modified = is_different
-            logger.info(f"Setting modified flag to {is_different} based on changes")
-            
-            # Update UI state to reflect changes
-            self._update_ui_state()
-            
-            # Emit content changed signal to notify parent components
-            self.content_changed.emit()
-
+    
     def _on_question_type_changed(self, index):
         """Handle changes to the question type"""
         if not self.questions or not self.questions[0]:
