@@ -462,7 +462,6 @@ class VietnamMainWindow(QWidget):
         else:
             logger.info("Reached the end of image list")
             QMessageBox.information(self, "Completed", "All images have been labeled!")
-            self.close()
 
     def prev_image(self):
         """Handle previous image button click"""
