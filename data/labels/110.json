@@ -1,0 +1,19 @@
+{
+  "image_id": "110",
+  "image_source": "image_crowdsourcing",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Chai nước có đây không?",
+      "question_type": "Existence Checking",
+      "answerable": 1,
+      "answers": [
+        "Có"
+      ],
+      "tags": [
+        "WATER_BOTTLE"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}
