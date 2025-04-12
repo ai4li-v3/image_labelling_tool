@@ -1,0 +1,19 @@
+{
+  "image_id": "147",
+  "image_source": "manually_collected",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Cốc có ở chỗ này không?",
+      "question_type": "Existence Checking",
+      "answerable": 1,
+      "answers": [
+        "Có"
+      ],
+      "tags": [
+        "CUP"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}

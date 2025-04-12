@@ -1,0 +1,19 @@
+{
+  "image_id": "109",
+  "image_source": "manually_collected",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Có chai nước nào không?",
+      "question_type": "Existence Checking",
+      "answerable": 0,
+      "answers": [
+        "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh"
+      ],
+      "tags": [
+        "WATER_BOTTLE"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}

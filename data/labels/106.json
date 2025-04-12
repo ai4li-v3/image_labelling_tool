@@ -1,0 +1,19 @@
+{
+  "image_id": "106",
+  "image_source": "manually_collected",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Cái vi có ở đây không?",
+      "question_type": "Existence Checking",
+      "answerable": 0,
+      "answers": [
+        "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh"
+      ],
+      "tags": [
+        "WALLET"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}

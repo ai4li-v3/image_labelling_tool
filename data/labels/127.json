@@ -1,0 +1,19 @@
+{
+  "image_id": "127",
+  "image_source": "manually_collected",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Điều khiển ở đây không?",
+      "question_type": "Existence Checking",
+      "answerable": 1,
+      "answers": [
+        "Có"
+      ],
+      "tags": [
+        "REMOTE"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}
