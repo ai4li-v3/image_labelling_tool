@@ -1,0 +1,19 @@
+{
+  "image_id": "045",
+  "image_source": "manually_collected",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Có điều khiển nào trong ảnh không?",
+      "question_type": "Existence Checking",
+      "answerable": 1,
+      "answers": [
+        "Có"
+      ],
+      "tags": [
+        "REMOTE"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}
