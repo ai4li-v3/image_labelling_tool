@@ -4,11 +4,11 @@
   "questions": [
     {
       "question_id": 1,
-      "question": "Có cái ví không?",
+      "question": "Có có chai nước nào không?",
       "question_type": "Existence Checking",
       "answerable": 1,
       "answers": [
-        "Không"
+        "Có"
       ],
       "tags": [
         "WALLET"
