@@ -4,14 +4,14 @@
   "questions": [
     {
       "question_id": 1,
-      "question": "Có chai nước không?",
+      "question": "Có cái ví không?",
       "question_type": "Existence Checking",
       "answerable": 1,
       "answers": [
         "Không"
       ],
       "tags": [
-        "WATER_BOTTLE"
+        "WALLET"
       ],
       "qa_source": "manually_annotated"
     }
