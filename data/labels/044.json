@@ -1,0 +1,19 @@
+{
+  "image_id": "044",
+  "image_source": "image_crowdsourcing",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Có điều khiển trong ảnh không?",
+      "question_type": "Existence Checking",
+      "answerable": 1,
+      "answers": [
+        "Có"
+      ],
+      "tags": [
+        "REMOTE"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}
