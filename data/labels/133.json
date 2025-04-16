@@ -4,7 +4,7 @@
   "questions": [
     {
       "question_id": 1,
-      "question": "Có cốc nước ở đây không?",
+      "question": "Có cái cốc nào ở đây không?",
       "question_type": "Existence Checking",
       "answerable": 1,
       "answers": [
