@@ -1,0 +1,19 @@
+{
+  "image_id": "249",
+  "image_source": "image_crowdsourcing",
+  "questions": [
+    {
+      "question_id": 1,
+      "question": "Trong ảnh có xuất hiện cái ví nào không?",
+      "question_type": "Existence Checking",
+      "answerable": 0,
+      "answers": [
+        "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh"
+      ],
+      "tags": [
+        "WALLET"
+      ],
+      "qa_source": "manually_annotated"
+    }
+  ]
+}
