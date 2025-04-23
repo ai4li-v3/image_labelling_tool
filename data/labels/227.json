@@ -6,9 +6,9 @@
       "question_id": 1,
       "question": "Có chiếc điều khiển nào trong ảnh không?",
       "question_type": "Existence Checking",
-      "answerable": 0,
+      "answerable": 1,
       "answers": [
-        "Không thể trả lời được câu hỏi dựa vào thông tin trong ảnh"
+        "Không"
       ],
       "tags": [
         "REMOTE"
